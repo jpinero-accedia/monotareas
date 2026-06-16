@@ -1,0 +1,23 @@
+services:
+  express-server-service:
+    build:
+      context: ./app
+      dockerfile: ../docker/Dockerfile
+      target: dev
+    container_name: express-dev-container
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./app:/app
+      - express-node-modules:/app/node_modules
+      - express-yarn:/app/.yarn
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: true
+
+volumes:
+  express-node-modules:
+    name: express-dev-node-modules
+  express-yarn:
+    name: express-dev-yarn-cache
+
