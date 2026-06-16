@@ -1,5 +1,7 @@
 import express from 'express';
 
+import { initDb } from './db.js';
+
 const app=express();
 
 const PORT=3000;
