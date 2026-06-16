@@ -5,13 +5,13 @@ WORKDIR /app
 
 ENV YARN_ENABLE_TELEMETRY=0
 
-RUN corepack enable
+COPY ./app/package*.json ./app/yarn.lock* ./app/.yarnrc.yml ./
 
-COPY package*.json yarn.lock* .yarnrc.yml ./
+RUN corepack enable && corepack use yarn
 
 RUN yarn install
 
-COPY src ./src
+COPY ./app/src ./src
 
 EXPOSE 3000
 
@@ -24,4 +24,3 @@ CMD ["yarn", "dev"]
 FROM base AS prod
 
 CMD ["yarn", "start"]
-
