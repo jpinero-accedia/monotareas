@@ -1,15 +1,20 @@
+### NETWORKS: backend en su propia red
 networks:
-  frontend-network:
-    driver: bridge
   backend-network:
     driver: bridge
+  frontend-network:
+    driver: bridge
 
 
+#### SERVICES (mariadb,phpmyadmin,express-server,html-client)
 services:
+
+
+
   express-server-service:
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./docker/Dockerfile
       target: dev
     container_name: express-dev-container
     restart: unless-stopped
@@ -20,29 +25,29 @@ services:
       - express-node-modules:/app/node_modules
       - express-yarn:/app/.yarn
     environment:
-      NODE_ENV: development
+      MARIADB_DATABASE:    tareas-db
+      MARIADB_USER:        tareas-user
+      MARIADB_PASSWORD:    tareas-secret
+      DB_HOST:             mariadb-service
+      NODE_ENV:            development
       CHOKIDAR_USEPOLLING: true
-      MARIADB_USER:          tareas-user
-      MARIADB_USER_HOST:     '%'
-      MARIADB_PASSWORD:      user-secret
-      MARIADB_DATABASE:      tareas-db
     networks:
       - backend-network
       - frontend-network
-
+    depends_on:
+      - mariadb-service
 
   mariadb-service:
     image: mariadb:12.3.2-noble
     container_name: mariadb-container
     restart: unless-stopped
     environment:
-      PORT:                  '3306'
-      MARIADB_USER:          tareas-user
-      MARIADB_USER_HOST:     '%'
-      MARIADB_PASSWORD:      user-secret
+      MARIADB_DATABASE:      tareas-db
       MARIADB_ROOT_HOST:     '%'
       MARIADB_ROOT_PASSWORD: secret
-      MARIADB_DATABASE:      tareas-db
+      MARIADB_USER:          tareas-user
+      MARIADB_USER_HOST:     '%'
+      MARIADB_PASSWORD:      tareas-secret
     ports:
       - "3306:3306"
     volumes:
@@ -50,7 +55,24 @@ services:
     networks:
       - backend-network
 
+  phpmyadmin-service:
+    image: phpmyadmin:5.2.3-apache
+    container_name: phpmyadmin-container
+    restart: unless-stopped
+    environment:
+      PMA_HOST:             mariadb-service
+      PMA_PORT:             3306
+      MYSQL_ROOT_PASSWORD:  secret
+    ports:
+      - "8000:80"
+    networks:
+      - backend-network
+      - frontend-network
+    depends_on:
+      - mariadb-service
 
+
+### VOLUMES: (mariadb tables, node_modules y yarn_cache)
 volumes:
   express-node-modules:
     name: express-dev-node-modules

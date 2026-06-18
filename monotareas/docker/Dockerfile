@@ -24,3 +24,4 @@ CMD ["yarn", "dev"]
 FROM base AS prod
 
 CMD ["yarn", "start"]
+

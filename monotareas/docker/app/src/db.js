@@ -1,51 +1,68 @@
 // vim: ft=javascript: ts=3: sw=3: noet:
 
-import mariadb from 'mariadb';
-
-import initialData from './initial-data.json' with { type: 'json' };
-
-
-export const fxs = {};
+import mariadb     from 'mariadb';
+import _dp         from './debug-print.js';
+import initialData from './initial-data.json' with { type: 'json'};
 
 
+//
+// Clase que controla mi instancia de MariaDB
+//
 class Driver {
-	constructor (indata) {
-		const defdata = {
-			host:            'localhost',
-			user:            'root',
-			password:        undefined,
-			database:        undefined,
-			connectionLimit: 5
-		};
 
-		this.config = Object.fromEntries(
-			Object.entries({ ...defdata, ...indata })
-				.filter( ( [k] ) => k in defdata )
-		);
+	// ==> EL CONSTRUCTOR GUARDA LA CONFIGRACIÓN DE CONEXIÓN QUE SE PASA POR PARÁMETROS
+	//         Y LANZA UNA LLAMADA PARA COMPROBAR EL ESQUEMA
+	//
+	constructor ({
+
+		       password,
+		       database,
+		           host = 'localhost',
+		           user = 'root',
+		connectionLimit = 5,
+		 bigIntAsNumber = false,
+		...rest
+
+	}){
+
+		// guarda la configuración
+		this.config={ password, database, host, user, connectionLimit, bigIntAsNumber, ...rest };
+
+		_dp("La config en el constructor:", this.config);
+
+		// comprobamos el esquema
+		this.#checkSchema();
 	}
 
 
+	// ==> HELPERS PARA SIMPLIFICAR LA EJECUCIÓN DE CONSULTAS SQL
+	//        (VER MÁS ADELANTE #query Y #execute) 
+
+	// Función que devuelve un generador de conexiones (pool)
+	// Es un singleton, así que una vez generado siempre devuelve la
+	//     misma instancia
 	#getPool () {
 		return this.pool ?? (
 			this.pool = mariadb.createPool(this.config)
-		);
+		); 
 	}
 
 
 	async #getConnection () {
-		return await this.#getPool().getConnection();
+		return await (this.#getPool()).getConnection();
 	}
 
 
-	async #conn ( handler ) {
+	async #conn (handler) {
 		let conn;
 		let ret = undefined;
-		
+
 		try {
-			ret = await handler(conn);
+			conn = await this.#getConnection();
+			ret  = await handler(conn);
 		}
 		catch (err) {
-			console.error(`La operación con la conexión falló: ${err}`);
+			console.error(`Error en la operación con la conexión: ${err}`);
 		}
 		finally {
 			if (conn) {
@@ -57,104 +74,129 @@ class Driver {
 	}
 
 
+	// ==> PARA HACER
+	//        *   #query(sql)
+	//               -> principal uso: SELECT
+	//               -> devuelve rowset
+	//
+	//        * #execute(sql,param1,param2...)
+	//               -> admite parametros que se escapan y sustityen los símbolos '?'
+	//               -> principal use: INSERT INTO, UPDATE, DELETE FROM
+	//               -> develve info sobre lo modificado
+	//
+
 	async query (sql) {
-		return await this.#conn(
-			async conn => await conn.query(sql)
+		return await this.#conn( async conn => await conn.query(sql) );
+	}
+
+
+	async execute (sql, ...params) {
+		return await this.#conn( async conn => await conn.execute(sql, params) );
+	}
+
+
+	// ==> PARA CREAR UNA TAREA
+	//
+	
+	async create (titulo) {
+		return await this.execute('INSERT INTO tareas (titulo) VALUES (?);', titulo);
+	}
+
+
+	// ==> PARA CARGAR LOS DATOS INICIALES
+	//
+
+	async loadInitialData () {
+		const ret = await Promise.all(
+			initialData
+				.map( x => x.titulo )
+				.map( async t => await this.create(t) )
 		);
-	}
 
-	async execute (sql, params=[]) {
-		return await this.#conn(
-			async conn => await conn.execute(sql, params)
-		);
-	}
+		_dp("loadInitialData:", ret);
 
-
-	async #createSchema () {
-		await this.query(`
-			CREATE TABLE tareas (
-				id     INT          AUTO_INCREMENT PRIMARY KEY,
-				titulo VARCHAR(255) NOT NULL
-			);
-		`);
+		return ret;
 	}
 
 
-	async initialiseData () {
-		await this.#conn(
-			async conn => {
-				await initialData
-					.map( e => e.titulo )
-					.forEach( async titulo => await fxs.dbInsertData(titulo) )
-			}
-		);
-	}
-
+	// ==> PARA COMPROBAR EL ESQUEMA Y CREARLO SI HICIERA FALTA
+	//
 
 	async #doCheckSchema () {
-		const tablas = await this.query("SHOW TABLES LIKE 'tareas';");
+		const tablas = await this.query("SHOW TABLES LIKE 'tareas'");
 		return ( tablas.length !== 0 );
 	}
 
 
-	async checkSchema () {
+	async #createSchema () {
+		await this.execute(`
+   		CREATE TABLE tareas (
+   		    id     INT          AUTO_INCREMENT PRIMARY KEY,
+   		    titulo VARCHAR(255) NOT NULL
+   		)    
+   	`);
+	}
+
+
+	async #checkSchema () {
 		if ( ! await this.#doCheckSchema() ) {
-			console.log("No existe el esquema de la base de datos.");
-
-			// Lo creamos
 			await this.#createSchema();
-
-			// Añadimos los datos de inicio
-			await this.initialiseData();
+			await this.loadInitialData();
 		}
 	}
-
-
-	async deleteAll () {
-		return await this.execute('DELETE FROM tareas;');
-	}
 }
 
 
-// Creamos un driver global
-const theDriver = new Driver({
-	host:     process.env.DB_HOST               || 'localhost',
-	user:     process.env.MARIADB_USER          || 'root',
-	password: process.env.MARIADB_USER_PASSWORD || 'secret',
-	database: process.env.MARIADB_DATABASE      || 'tareasdb',
-});
+// VAMOS A EXPORTAR UNA SERIE DE FUNCIONES QUE UTILIZAN UNA INSTANCIA
+//     DE 'Driver' en CLOUSURE
+	
+// getAllTasks / getOneTask / createTask / resetTasks
+//
 
+export default ( function () {
 
-// Funciones que el modulo exporta
-fxs.dbGetAll = async function () {
-	return await this.query('SELECT id, titulo FROM tareas;');
-}
+	// CREAMOS UN OBJETO DRIVER QUE PASARÁ A SER EL QUE SIEMPRE USAREMOS PARA
+	//      INTERACTUAR CON LA BASE DE DATOS MEDIANTE CLOUSURES.
+	//
+	// COMO PARÁMETROS AL CONSTRUCTOR LE PASAMOS LA CONFIGURACIÓN DE LA CONEXIÓN
+	//      A LA BD, COGIENDO LOS DATOS DE VARIABLES DE ENTORNO
+	//
 
+	const theDriver = new Driver({
+		database: process.env.MARIADB_DATABASE  ?? 'dbname',
+		    user: process.env.MARIADB_USER      ?? 'root',
+		password: process.env.MARIADB_PASSWORD  ?? 'secret',
+		    host: process.env.DB_HOST           ?? 'localhost',
+	});
+	
+	
+	// DEVOLVEMOS UN OBJETO COMPESTO DE LAS FUNCIONES QUE QUEREMOS EXPORTAR
+	//
 
-fxs.dbGetOne = async function (id) {
-	return await this.query(`SELECT id, titulo FROM tareas WHERE id=${id};`);
-}
+	return {
+		getAllTasks: async () => {
+			return await theDriver.query("SELECT id, titulo FROM tareas;");
+		},
+	
+		getOneTask: async (id) => {
+			return await theDriver.execute("SELECT id, titulo FROM tareas WHERE id=?;", id);
+		},
+	
+		createTask: async (titulo) => {
+			return await theDriver.create(titulo);
+		},
+	
+		resetTasks: async () => {
+			const retDelete = await theDriver.execute("DELETE FROM tareas;");
+			_dp("resetTasks:retDelete:", retDelete);
 
+			const retLoad   = await theDriver.loadInitialData();
+			_dp("resetTasks:retLoad:", retLoad);
+	
+			return [ retDelete, ...retLoad ];
+		},
+	};
 
-fxs.dbInsertData = async function (titulo) {
-	return await this.execute(`INSERT INTO tareas (titulo) VALUES ("${titulo}")`);
-}
-
-
-fxs.dbReset = async function () {
-	const ret = await this.deleteAll();
-
-	await this.initialiseData();
-
-	return ret;
-}
-
-
-// con el driver global, comprobamos si hay esquema o tenemos que recrearlo
-(function () {
-	await theDriver.checkSchema();
 }) ();
 
 
-// Exportamos nuestro objeto por defecto
-export default fxs;
