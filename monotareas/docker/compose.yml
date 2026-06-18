@@ -1,22 +1,18 @@
+networks:
+  frontend-network:
+    driver: bridge
+  backend-network:
+    driver: bridge
+
+
 services:
-  mariadb-service:
-    image: mariadb:12.3.2-noble
-    container_name: mariadb-container
-    restart: always
-    environment:
-      MARIADB_ROOT_PASSWORD: secret
-      MARIADB_DATABASE: tareasdb
-    ports:
-      - "3306:3306"
-    volumes:
-      - db-data:/var/lib/mysql
   express-server-service:
     build:
       context: .
       dockerfile: ./Dockerfile
       target: dev
     container_name: express-dev-container
-    restart: always
+    restart: unless-stopped
     ports:
       - "3000:3000"
     volumes:
@@ -26,6 +22,34 @@ services:
     environment:
       NODE_ENV: development
       CHOKIDAR_USEPOLLING: true
+      MARIADB_USER:          tareas-user
+      MARIADB_USER_HOST:     '%'
+      MARIADB_PASSWORD:      user-secret
+      MARIADB_DATABASE:      tareas-db
+    networks:
+      - backend-network
+      - frontend-network
+
+
+  mariadb-service:
+    image: mariadb:12.3.2-noble
+    container_name: mariadb-container
+    restart: unless-stopped
+    environment:
+      PORT:                  '3306'
+      MARIADB_USER:          tareas-user
+      MARIADB_USER_HOST:     '%'
+      MARIADB_PASSWORD:      user-secret
+      MARIADB_ROOT_HOST:     '%'
+      MARIADB_ROOT_PASSWORD: secret
+      MARIADB_DATABASE:      tareas-db
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - backend-network
+
 
 volumes:
   express-node-modules:

@@ -118,11 +118,10 @@ class Driver {
 
 // Creamos un driver global
 const theDriver = new Driver({
-	host:     process.env.DB_HOST     || 'localhost',
-	user:     process.env.DB_USER     || 'root',
-	password: process.env.DB_PASSWORD || 'secret',
-	database: process.env.DB_NAME     || 'tareasdb',
-	pp: 34
+	host:     process.env.DB_HOST               || 'localhost',
+	user:     process.env.MARIADB_USER          || 'root',
+	password: process.env.MARIADB_USER_PASSWORD || 'secret',
+	database: process.env.MARIADB_DATABASE      || 'tareasdb',
 });
 
 
