@@ -7,7 +7,7 @@ ENV YARN_ENABLE_TELEMETRY=0
 
 COPY ./app/package*.json ./app/yarn.lock* ./app/.yarnrc.yml ./
 
-RUN corepack enable && corepack use yarn
+RUN corepack enable && corepack use prepare@stable
 
 RUN yarn install
 
