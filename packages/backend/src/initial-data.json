@@ -1,0 +1,5 @@
+[
+    { "titulo": "Aprender pnpm workspaces", "completada": false },
+    { "titulo": "Hacer aplicación IONIC",   "completada": false },
+    { "titulo": "Probar Tauri",             "completada": false }
+]

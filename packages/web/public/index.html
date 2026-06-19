@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Mono Tareas</title>
+	<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+	<main class="app">
+		<header class="app__header">
+			<h1>Mono Tareas</h1>
+			<button id="reset-btn" class="btn btn--ghost" title="Borrar todo y recargar datos de ejemplo">Reset</button>
+		</header>
+
+		<form id="new-task-form" class="new-task">
+			<input id="new-task-input" type="text" placeholder="¿Qué hay que hacer?" autocomplete="off" required>
+			<button type="submit" class="btn btn--primary">Añadir</button>
+		</form>
+
+		<p id="error-msg" class="error-msg" hidden></p>
+
+		<ul id="task-list" class="task-list"></ul>
+
+		<p id="empty-msg" class="empty-msg" hidden>No hay tareas. ¡Buen trabajo! 🎉</p>
+	</main>
+
+	<script type="module" src="./bundle.js"></script>
+</body>
+</html>

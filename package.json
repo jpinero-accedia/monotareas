@@ -1,0 +1,10 @@
+{
+	"name": "monotareas-monorepo",
+	"private": true,
+	"packageManager": "pnpm@9.15.0",
+	"scripts": {
+		"dev:backend": "pnpm --filter @monotareas/backend dev",
+		"build:backend": "pnpm --filter @monotareas/backend build",
+		"build:web": "pnpm --filter @monotareas/web build"
+	}
+}

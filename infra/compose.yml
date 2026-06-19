@@ -1,0 +1,92 @@
+### NETWORKS: backend en su propia red
+networks:
+  backend-network:
+    driver: bridge
+  frontend-network:
+    driver: bridge
+
+
+#### SERVICES (mariadb,phpmyadmin,express-server,web-client)
+services:
+
+
+  express-server-service:
+    build:
+      context: ..
+      dockerfile: infra/backend/Dockerfile
+      target: dev
+    container_name: express-dev-container
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../packages/backend:/repo/packages/backend
+      - express-node-modules:/repo/packages/backend/node_modules
+    environment:
+      MARIADB_DATABASE:    tareas-db
+      MARIADB_USER:        tareas-user
+      MARIADB_PASSWORD:    tareas-secret
+      DB_HOST:             mariadb-service
+      NODE_ENV:            development
+      CHOKIDAR_USEPOLLING: true
+    networks:
+      - backend-network
+      - frontend-network
+    depends_on:
+      - mariadb-service
+
+  mariadb-service:
+    image: mariadb:12.3.2-noble
+    container_name: mariadb-container
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE:      tareas-db
+      MARIADB_ROOT_HOST:     '%'
+      MARIADB_ROOT_PASSWORD: secret
+      MARIADB_USER:          tareas-user
+      MARIADB_USER_HOST:     '%'
+      MARIADB_PASSWORD:      tareas-secret
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - backend-network
+
+  phpmyadmin-service:
+    image: phpmyadmin:5.2.3-apache
+    container_name: phpmyadmin-container
+    restart: unless-stopped
+    environment:
+      PMA_HOST:             mariadb-service
+      PMA_PORT:             3306
+      MYSQL_ROOT_PASSWORD:  secret
+    ports:
+      - "8000:80"
+    networks:
+      - backend-network
+      - frontend-network
+    depends_on:
+      - mariadb-service
+
+  web-service:
+    build:
+      context: ..
+      dockerfile: infra/web/Dockerfile
+      target: serve
+    container_name: web-container
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    networks:
+      - frontend-network
+    depends_on:
+      - express-server-service
+
+
+### VOLUMES: (mariadb tables y node_modules del backend)
+volumes:
+  express-node-modules:
+    name: express-dev-node-modules
+  db-data:
+    name: mariadb-data

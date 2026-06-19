@@ -1,0 +1,16 @@
+{
+	"name": "@monotareas/tauri-app",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"build:web": "pnpm --filter @monotareas/web build",
+		"dev": "pnpm build:web && tauri dev",
+		"build": "pnpm build:web && tauri build"
+	},
+	"dependencies": {
+		"@monotareas/web": "workspace:*"
+	},
+	"devDependencies": {
+		"@tauri-apps/cli": "^2.11.2"
+	}
+}

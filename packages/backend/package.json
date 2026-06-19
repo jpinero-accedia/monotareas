@@ -1,0 +1,23 @@
+{
+	"name": "@monotareas/backend",
+	"version": "0.1.0",
+	"type": "module",
+	"main": "dist/server.js",
+	"scripts": {
+		"build": "tsc -p tsconfig.json",
+		"start": "node dist/server.js",
+		"dev": "tsx watch src/server.ts"
+	},
+	"dependencies": {
+		"cors": "^2.8.6",
+		"express": "^5.2.1",
+		"mariadb": "^3.5.3"
+	},
+	"devDependencies": {
+		"@types/cors": "^2.8.19",
+		"@types/express": "^5.0.6",
+		"@types/node": "^25.09.3",
+		"tsx": "^4.22.4",
+		"typescript": "^6.0.3"
+	}
+}

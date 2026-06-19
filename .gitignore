@@ -19,6 +19,7 @@
 *.env
 .env.*
 
+
 # Local configuration that shouldn't be shared
 *.local
 
@@ -163,6 +164,7 @@ lib-cov
 # Build output
 
 dist/
+types/
 build/
 .next/
 out/
@@ -317,3 +319,5 @@ logs/
 .vscode/sftp.json
 .vscode/tags
 .devcontainer/
+
+.claude

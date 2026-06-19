@@ -1,0 +1,19 @@
+{
+	"name": "@monotareas/capacitor-app",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"build:web": "pnpm --filter @monotareas/web build",
+		"sync": "pnpm build:web && cap sync",
+		"open:android": "cap open android"
+	},
+	"dependencies": {
+		"@capacitor/core": "^8.4.0",
+		"@monotareas/web": "workspace:*"
+	},
+	"devDependencies": {
+		"tar": "^7.5.16",
+		"@capacitor/android": "^8.4.0",
+		"@capacitor/cli": "^8.4.0"
+	}
+}
