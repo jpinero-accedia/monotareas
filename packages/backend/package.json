@@ -4,7 +4,11 @@
 	"type": "module",
 	"main": "dist/server.js",
 	"scripts": {
+		"clean": "rm -rf dist/*",
 		"build": "tsc -p tsconfig.json",
+		"cbuild": "pnpm clean && pnpm build",
+		"clean-and-build": "pnpm cbuild",
+		"cb": "pnpm cbuild",
 		"start": "node dist/server.js",
 		"dev": "tsx watch src/server.ts"
 	},

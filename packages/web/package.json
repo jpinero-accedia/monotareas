@@ -5,7 +5,9 @@
 	"type": "module",
 	"scripts": {
 		"clean": "rm -rf dist/*",
-		"build": "tsc -p tsconfig.json && tsx build.ts",
+		"type": "tsc -p tsconfig.json",
+		"esbuild": "tsx build.ts",
+		"build": "pnpm type && pnpm esbuild",
 		"cbuild": "pnpm clean && pnpm build",
 		"clean-and-build": "pnpm cbuild",
 		"cb": "pnpm cbuild",
