@@ -4,8 +4,21 @@
 	"private": true,
 	"scripts": {
 		"build:web": "pnpm --filter @monotareas/web build",
+		"clean:web": "pnpm --filter @monotareas/web clean",
+		"cbuild:web": "pnpm --filter @monotareas/web cbuild",
+		"clean": "rm -rf android ios",
 		"sync": "pnpm build:web && cap sync",
-		"open:android": "cap open android"
+		"android:add": "cap add android",
+		"android:open": "cap open android",
+		"android:run": "cap run android",
+		"ios:add": "cap add ios",
+		"ios:open": "cap open ios",
+		"ios:run": "cap run ios",
+		"cap-add": "pnpm android:add && pnpm ios:add",
+		"build": "pnpm sync && pnpm cap-add",
+		"cbuild": "pnpm clean && pnpm build",
+		"clean-and-build": "pnpm cbuild",
+		"cb": "pnpm cbuild"
 	},
 	"dependencies": {
 		"@capacitor/core": "^8.4.0",
@@ -14,6 +27,7 @@
 	"devDependencies": {
 		"tar": "^7.5.16",
 		"@capacitor/android": "^8.4.0",
+		"@capacitor/ios": "^8.4.0",
 		"@capacitor/cli": "^8.4.0"
 	}
 }

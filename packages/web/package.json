@@ -4,7 +4,11 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
+		"clean": "rm -rf dist/*",
 		"build": "tsc -p tsconfig.json && tsx build.ts",
+		"cbuild": "pnpm clean && pnpm build",
+		"clean-and-build": "pnpm cbuild",
+		"cb": "pnpm cbuild",
 		"dev": "tsx build.ts --watch"
 	},
 	"dependencies": {
