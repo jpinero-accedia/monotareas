@@ -4,7 +4,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"clean": "rm -rf dist/*",
+		"clean": "rm -rf dist",
 		"type": "tsc -p tsconfig.json",
 		"esbuild": "tsx build.ts",
 		"build": "pnpm type && pnpm esbuild",
